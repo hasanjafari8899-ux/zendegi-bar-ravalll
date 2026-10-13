@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#245747">
+<link rel="manifest" href="manifest.webmanifest">
+<title>زندگی به روال برنامه</title>
+<style>
+:root{--g:#245747;--bg:#f4f6f3;--card:#fff;--line:#d7ded8;--muted:#66736b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Tahoma,Arial,sans-serif;color:#18231c;line-height:1.9}
+header{background:var(--g);color:#fff;padding:18px 15px}h1{font-size:20px;margin:0}header p{font-size:12px;margin:3px 0 0}
+main{max-width:760px;margin:auto;padding:12px}.panel,.q{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px;margin-bottom:11px}
+.controls{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+button,input,select{font:inherit;border:1px solid #bdc9c0;border-radius:9px;padding:8px 10px;background:white;color:#18231c}
+button.primary{background:var(--g);color:white;border-color:var(--g)}button.danger{color:#9d2f2f}
+#dateLabel{font-weight:bold;margin:9px 0 2px} .muted{font-size:12px;color:var(--muted)}
+.q label{display:block;font-weight:bold;margin-bottom:6px}textarea{display:block;width:100%;min-height:100px;resize:vertical;font:inherit;line-height:1.8;border:1px solid #cbd5ce;border-radius:9px;padding:9px;background:#fcfdfc}
+#status{font-size:12px;color:var(--g);min-height:22px}.hidden{display:none}footer{text-align:center;color:var(--muted);font-size:11px;padding:12px}
+</style>
+</head>
+<body>
+<header><h1>زندگی به روال برنامه</h1><p>کاربرگ روزانه • تقویم هجری شمسی</p></header>
+<main>
+<section class="panel">
+ <div class="controls">
+  <button id="prev">روز قبل</button><button id="next">روز بعد</button><button id="today" class="primary">امروز</button>
+  <input id="date" type="date" aria-label="انتخاب تاریخ میلادی برای رفتن به روز">
+ </div>
+ <div id="dateLabel"></div>
+ <div class="muted">تاریخ به تقویم هجری شمسی نمایش داده می‌شود. پاسخ هر روز جداگانه ذخیره می‌شود.</div>
+ <div id="status" aria-live="polite"></div>
+</section>
+<section class="panel" id="intro">
+ <b>آن‌چه برای ما مفید بود — یادداشت‌های روزانه NA</b>
+ <p>هدف از این ترازنامه روزانه این است که بدانیم امروز چه جور آدمی هستیم و چه‌طور رفتار می‌کنیم. سعی کنید هر روز به تمام این سؤال‌ها پاسخ دهید. تا می‌توانید پاسخ‌هایتان ساده و صادقانه باشد. اگر یک روز نتوانستید جواب بدهید، لازم نیست روز بعد آن را جبران کنید.</p>
+ <p>پاسخ‌ها و دغدغه‌هایتان را به ۲۴ ساعت گذشته محدود کنید و آخر هر روز به سؤال‌ها جواب دهید. اگر دوست دارید مطالب این یادداشت‌های روزانه را با دیگران در میان بگذارید، پیشنهاد می‌کنیم این کار را به‌صورت شفاهی انجام دهید.</p>
+ <p>یادتان باشد که ترازنامه روزانه امتحان نیست و پاسخ درست و غلط ندارد. این یک برنامه رشد و بهبودی است و همین که امروز پاک هستید یعنی دارید کار درستی می‌کنید.</p>
+</section>
+<div id="questions"></div>
+<section class="panel">
+ <label for="notes"><b>یادداشت آزاد امروز</b></label>
+ <textarea id="notes" placeholder="یادداشت اختیاری..."></textarea>
+ <div class="controls" style="margin-top:10px">
+  <button id="clear" class="danger">حذف پاسخ‌های این روز</button>
+  <button id="export" class="primary">پشتیبان‌گیری</button>
+  <button id="importBtn">بازیابی پشتیبان</button><input id="importFile" type="file" accept=".json,application/json" class="hidden">
+ </div>
+ <p class="muted">پاسخ‌ها در حافظه همین مرورگر ذخیره می‌شوند. برای جلوگیری از ازدست‌رفتن نوشته‌ها، مرتب پشتیبان بگیرید.</p>
+</section>
+<footer>نسخه ساده شخصی • بدون حساب کاربری و بدون ارسال پاسخ‌ها به سرور</footer>
+</main>
+<script>
+const QUESTIONS=[
+{q:"آیا امروز پاک هستم؟"},
+{q:"امروز چه تغییری در رفتارم داده‌ام؟"},
+{q:"آیا امروز بیماری‌ام زندگی مرا اداره کرد؟",sub:"اگر آری، چگونه؟"},
+{q:"امروز چه کاری کردم که آرزو می‌کنم آن را انجام نداده بودم؟"},
+{q:"چه کاری را انجام نداده‌ام که آرزو می‌کنم آن را انجام داده بودم؟"},
+{q:"آیا امروز در حق خود مهربان بودم؟",sub:"چگونه؟"},
+{q:"آیا امروز روز خوبی بود؟"},
+{q:"آیا خوشحال بودم؟"},
+{q:"آیا آرامش داشتم؟"},
+{q:"آیا امروز با راهنمایم صحبت کردم؟"},
+{q:"آیا امروز به جلسه رفتم؟",sub:"کجا؟"},
+{q:"آیا امروز تجربه، نیرو و امیدم را با دیگران در میان گذاشتم؟"},
+{q:"امروز چه کسانی در کنارم هستند که به آن‌ها اعتماد دارم؟"},
+{q:"امروز چه کسانی به من اعتماد دارند؟"},
+{q:"آیا امروز نشریاتمان را مطالعه کردم؟"},
+{q:"امروز کدام قدم را آگاهانه کار کردم؟"},
+{q:"آیا امروز به عجز خود اقرار کردم؟"},
+{q:"آیا امروز توانستم به نیروی برترم اعتماد کنم؟"},
+{q:"امروز چه چیزی در مورد خودم یاد گرفتم؟"},
+{q:"آیا امروز هیچ جبران خسارتی کردم؟"},
+{q:"آیا جبران خسارتی بر عهده‌ام هست؟"},
+{q:"آیا بابت گذشته یا آینده نگرانی داشتم؟"},
+{q:"آیا امروز می‌توانم خودم را همین‌طور که هستم بپذیرم؟"},
+{q:"آیا امروز احساس کردم که من هم جزئی از بشریت هستم؟"},
+{q:"آیا امروز سبب شدم که وسوسه چیزی مرا فرا بگیرد؟"},
+{q:"خداوند امروز چه چیزی به من داده که بابتش شکرگزار هستم؟"},
+{q:"آیا امروز کاری کرده‌ام که باعث آزار یا صدمه‌ای به خودم یا دیگری شده باشد؟",sub:"اگر آری، چگونه؟"},
+{q:"آیا امروز تمایل به تغییر دارم؟"},
+{q:"آیا امروز دعا یا مراقبه کردم؟"},
+{q:"این کار چه اثری بر زندگی من گذاشت؟"},
+{q:"امروز کدام‌یک از اصول روحانی را توانسته‌ام در زندگی به اجرا درآورم؟"},
+{q:"آیا امروز مهم‌ترین مسئله در زندگی من پاک ماندن بود؟"},
+{q:"آیا امروز بدون هیچ چشم‌داشتی، در حق دیگران ایثار کرده‌ام؟"},
+{q:"آیا امروز ترس در زندگی من وجود داشت؟"},
+{q:"آیا وجد یا درد شدیدی احساس کردم؟"},
+{q:"آیا امروز تلفنی یا حضوری با یکی از اعضای برنامه تماس داشتم؟"},
+{q:"آیا امروز برای سعادت دیگران دعا کردم؟"},
+{q:"آیا امروز خوشحال بودم؟"},
+{q:"آیا امروز آرامش داشتم؟"},
+{q:"آیا آگاهانه به یاد داشتم که امروز دیگر حق انتخاب دارم؟"}
+], STORE="zbr_shamsi_v2";
+const $=id=>document.getElementById(id);
+let all={};try{all=JSON.parse(localStorage.getItem(STORE)||"{}")}catch(e){}
+const today=()=>{let d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
+function shift(iso,n){let d=new Date(iso+"T12:00:00");d.setDate(d.getDate()+n);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function save(){localStorage.setItem(STORE,JSON.stringify(all))}
+function key(){return $("date").value||today()}
+function showJalali(iso){let d=new Date(iso+"T12:00:00");return new Intl.DateTimeFormat("fa-IR-u-ca-persian",{weekday:"long",year:"numeric",month:"long",day:"numeric"}).format(d)}
+function render(){let iso=key(),entry=all[iso]||{answers:{},notes:""};$("dateLabel").textContent=showJalali(iso);$("questions").innerHTML="";
+QUESTIONS.forEach((item,i)=>{let sec=document.createElement("section");sec.className="q";let l=document.createElement("label");l.htmlFor="q"+i;l.textContent=(i+1)+". "+item.q;sec.append(l);let t=document.createElement("textarea");t.id="q"+i;t.placeholder="پاسخ خود را بنویسید...";t.value=entry.answers?.[i]||"";t.addEventListener("input",()=>{if(!all[iso])all[iso]={answers:{},notes:""};all[iso].answers[i]=t.value;save();$("status").textContent="ذخیره شد";});sec.append(t);if(item.sub){let sub=document.createElement("label");sub.htmlFor="sub"+i;sub.style.marginTop="10px";sub.textContent=item.sub;let st=document.createElement("textarea");st.id="sub"+i;st.placeholder="پاسخ تکمیلی...";st.value=entry.answers?.["sub"+i]||"";st.addEventListener("input",()=>{if(!all[iso])all[iso]={answers:{},notes:""};all[iso].answers["sub"+i]=st.value;save();$("status").textContent="ذخیره شد";});sec.append(sub,st)}$("questions").append(sec)});
+$("notes").value=entry.notes||"";$("status").textContent=""}
+$("date").addEventListener("change",render);$("prev").onclick=()=>{$("date").value=shift(key(),-1);render()};$("next").onclick=()=>{$("date").value=shift(key(),1);render()};$("today").onclick=()=>{$("date").value=today();render()};
+$("notes").addEventListener("input",()=>{let iso=key();if(!all[iso])all[iso]={answers:{},notes:""};all[iso].notes=$("notes").value;save();$("status").textContent="ذخیره شد"});
+$("clear").onclick=()=>{if(confirm("پاسخ‌ها و یادداشت این روز حذف شوند؟")){delete all[key()];save();render();$("status").textContent="پاسخ‌های این روز حذف شدند"}};
+$("export").onclick=()=>{let b=new Blob([JSON.stringify({version:1,data:all},null,2)],{type:"application/json"});let a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="zendegi-backup.json";a.click();URL.revokeObjectURL(a.href)};
+$("importBtn").onclick=()=>$("importFile").click();$("importFile").onchange=async e=>{try{let j=JSON.parse(await e.target.files[0].text());let incoming=j.data||j;if(confirm("داده‌های پشتیبان با تاریخ‌های مشابه جایگزین شوند؟")){all={...all,...incoming};save();render();alert("بازیابی انجام شد")}}catch(err){alert("فایل پشتیبان معتبر نیست")}e.target.value=""};
+$("date").value=today();render();
+if("serviceWorker" in navigator && location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
+</script>
+</body></html>

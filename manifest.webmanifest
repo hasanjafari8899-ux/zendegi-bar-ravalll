@@ -1,0 +1,10 @@
+{
+  "name": "زندگی به روال برنامه",
+  "short_name": "یادداشت NA",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f6f3",
+  "theme_color": "#245747"
+}
